@@ -1,0 +1,26 @@
+MathJax can be configured to generate SVG, 
+yet it is difficult to integrate this SVG into an SVG diagram.
+One approach uses SVG's <code>foreignObject</code>, but this isn't
+compatible with all browsers (e.g., IE and sometimes Firefox).
+Moreover, standalone SVG files don't support <code>foreignObject</code>.
+(Note, however, that this can sometimes be solved by wrapping the SVG
+in html tags.)
+
+But there is a solution.  First, here's a div with some MathJax.
+We'll use just a single character to make the SVG code easy to follow.
+But this method works for more complex MathJax expressions.
+
+<!--puzlet_end--> (1)
+
+
+
+<!--puzlet_end--> (9)
+
+MathJax generates the following HTML.
+
+<!--puzlet_end--> (8)
+
+MathJax generates the following HTML.
+
+<!--puzlet_end--> (8)
+

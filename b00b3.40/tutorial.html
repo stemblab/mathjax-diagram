@@ -1,0 +1,87 @@
+<div style="margin-top: -10px; margin-bottom: 20px; 
+    width: 720px; text-align: center; color: #888">
+    Martin Clark<br>1 March 2014
+</div>
+
+<!--puzlet_end--> (1)
+
+One way to integrate MathJax-generated SVG into an SVG diagram is to 
+[http://stackoverflow.com/questions/15962325/mathjax-inside-svg, 
+use the %foreignObject% tag].
+Unfortunately, %foreignObject% isn't compatible with all browsers
+(e.g., IE) and isn't supported in standalone SVG files.
+
+This module shows how to integrate MathJax SVG directly 
+into an SVG diagram, without requiring %foreignObject%.
+
+The module [/m/b00b1, CoffeeScript Block Diagram] uses
+this technique.
+
+<!--puzlet_end--> (38)
+
+==SVG Diagram==
+First, we create an SVG Diagram with a border and a rectangle element 
+(yellow box).  We'll show how to position a MathJax element 
+within the box.
+
+<!--puzlet_end--> (30)
+
+==MathJax Element==
+Here's a \<div\> with a MathJax element.
+We'll use just a single character to make the SVG code easy to follow.
+Later, we'll show that the method also works for complex 
+MathJax expressions.
+
+<!--puzlet_end--> (23)
+
+==MathJax SVG==
+We use CoffeeScript (or JavaScript) and jQuery to get the 
+generated HTML/SVG for this MathJax.
+
+(Note: %run% is a pre-defined function to execute code 
+within this Puzlet web page.
+%dispXml% is a pre-defined function to display XML
+in a \<div\> element below the code.)
+
+<!--puzlet_end--> (8)
+
+==Embedding MathJax in Diagram==
+The class below clones the MathJax SVG and scales/translates it so that
+it can be included within our SVG diagram. We'll use this class soon.
+
+<!--puzlet_end--> (15)
+
+The function %show% clones the original SVG diagram,
+creates a %MathJaxObject% (the class above),
+and appends the object to the cloned diagram.
+It also displays the diagram's SVG code after the MathJax is embedded.
+The displayed MathJax appears at the top-left corner of the SVG diagram.
+
+<!--puzlet_end--> (27)
+
+==Positioning MathJax Object==
+Now we'll position the MathJax object at the top-left corner 
+of the yellow box in the SVG diagram.
+
+<!--puzlet_end--> (16)
+
+We can center the MathJax object within the yellow box by using
+%width% and %height% for the MathJax object and the yellow box.
+
+<!--puzlet_end--> (29)
+
+==Advanced Example==
+
+Here we define two MathJax objects, and embed them both into the diagram
+at different positions.
+
+<!--puzlet_end--> (31)
+
+==Standalone SVG file==
+To create a standalone SVG file, we need to embed MathJax glyphs
+into the diagram's SVG.  The code below shows how to do this,
+and displays the SVG in a textarea that can be copied into 
+a standalone file.
+
+<!--puzlet_end--> (35)
+

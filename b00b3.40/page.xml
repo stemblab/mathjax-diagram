@@ -1,0 +1,356 @@
+<document>
+
+<code lang="html" file="tutorial" id="1" exec="0" show="0" out="1" math="svg">
+<div style="margin-top: -10px; margin-bottom: 20px; 
+    width: 720px; text-align: center; color: #888">
+    Martin Clark<br>1 March 2014
+</div>
+</code>
+
+<code id="39" lang="coffee" file="resources" exec="0" show="0" out="1">
+$pz.resources = -> [
+	{file: "mathjax.js", fromPage: true}
+    {url: "/jslib/vkbeautify.0.99.00.beta.js"}
+]
+</code>
+
+<code id="38" lang="html" file="tutorial" exec="0" show="0" out="1">
+One way to integrate MathJax-generated SVG into an SVG diagram is to 
+[http://stackoverflow.com/questions/15962325/mathjax-inside-svg, 
+use the %foreignObject% tag].
+Unfortunately, %foreignObject% isn't compatible with all browsers
+(e.g., IE) and isn't supported in standalone SVG files.
+
+This module shows how to integrate MathJax SVG directly 
+into an SVG diagram, without requiring %foreignObject%.
+
+The module [/m/b00b1, CoffeeScript Block Diagram] uses
+this technique.
+</code>
+
+<code id="30" lang="html" file="tutorial" exec="0" show="0" out="1">
+==SVG Diagram==
+First, we create an SVG Diagram with a border and a rectangle element 
+(yellow box).  We'll show how to position a MathJax element 
+within the box.
+</code>
+
+<code id="20" lang="html" file="mathjax" exec="0" show="1" out="1">
+<svg id="diagram" xmlns='http://www.w3.org/2000/svg' 
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    version='1.1' width='720' height='100'>
+    <rect x="1" y="1" width="718" height="98" 
+        style="fill: white; stroke: blue; stroke-width: 0.5"></rect>
+    <rect id="yellowBox" x="100" y="30" width="150" height="50" 
+        style="fill: #ffa; stroke: black;"></rect>
+</svg>
+</code>
+
+<code id="23" lang="html" file="tutorial" exec="0" show="0" out="1">
+==MathJax Element==
+Here's a \<div\> with a MathJax element.
+We'll use just a single character to make the SVG code easy to follow.
+Later, we'll show that the method also works for complex 
+MathJax expressions.
+</code>
+
+
+<code id="9" lang="html" file="mathjax" exec="0" math="svg" show="1" out="1">
+<div id="mathjaxSource" style="padding: 20px; background: #cfc">
+$\Omega$
+</div>
+</code>
+
+<code id="8" lang="html" file="tutorial" exec="0" show="0" out="1">
+==MathJax SVG==
+We use CoffeeScript (or JavaScript) and jQuery to get the 
+generated HTML/SVG for this MathJax.
+
+(Note: %run% is a pre-defined function to execute code 
+within this Puzlet web page.
+%dispXml% is a pre-defined function to display XML
+in a \<div\> element below the code.)
+</code>
+
+<code id="13" lang="coffee" file="mathjax" exec="0" show="0" out="1">
+window.console ?= {log: ->}
+
+run = (f) -> 
+    # mathjaxPreConfig is a Puzlet event.
+    $(document).on "mathjaxPreConfig", =>
+        MathJax.Hub.Register.StartupHook "End", (-> f())
+        
+xmlString = ($xmlObj) ->
+    serializer = new XMLSerializer()
+    xml = serializer.serializeToString $xmlObj[0]
+    prettyXml = vkbeautify.xml xml
+        
+dispXml = (divId, obj) ->
+    return unless obj
+    div = $ "##{divId}"
+    pre = $ "<pre>"
+        css:
+            padding: "10px"
+            fontSize: "10pt"
+            lineHeight: "110%"
+            background: "#ffe"
+    div.append pre
+    prettyXml = xmlString obj
+    pre.text prettyXml
+</code>
+
+<code id="25" lang="coffee" file="mathjax" exec="0" show="1" out="1">
+run ->
+    source = $("#mathjaxSource").find ".MathJax_SVG"
+    dispXml "mathjax", source
+</code>
+
+<code id="11" lang="html" file="out" exec="0" show="0" out="1">
+<div id="mathjax"></div>
+</code>
+
+<code id="15" lang="html" file="tutorial" exec="0" show="0" out="1">
+==Embedding MathJax in Diagram==
+The class below clones the MathJax SVG and scales/translates it so that
+it can be included within our SVG diagram. We'll use this class soon.
+</code>
+
+<code id="14" lang="coffee" file="mathjax" exec="0" show="1" out="1">
+class MathJaxObject
+
+    constructor: (@divId, @scale=0.02) ->
+        @source = $("##{@divId}").find ".MathJax_SVG"
+        @svg = @source.find "svg"
+        g = @svg.find "g"
+        @group = $(g[0]).clone()
+        @translate 0, 0
+            
+    viewBox: -> @svg[0].viewBox
+    
+    width: -> @scale * @viewBox().baseVal.width
+    
+    height: -> @scale * @viewBox().baseVal.height
+     
+    translate: (@dx, @dy) ->
+        dy = @dy + (-@scale * @viewBox().baseVal.y)
+        @group[0].setAttribute "transform", 
+            "translate(#{@dx} #{dy}) scale(#{@scale}) matrix(1 0 0 -1 0 0)"
+                
+    appendTo: (diagram) ->
+        diagram.append @group
+</code>
+
+<code id="27" lang="html" file="tutorial" exec="0" show="0" out="1">
+The function %show% clones the original SVG diagram,
+creates a %MathJaxObject% (the class above),
+and appends the object to the cloned diagram.
+It also displays the diagram's SVG code after the MathJax is embedded.
+The displayed MathJax appears at the top-left corner of the SVG diagram.
+</code>
+
+<code id="28" lang="coffee" file="mathjax" exec="0" show="1" out="1">
+show = (divId, mathjaxId, f=null) ->
+    run ->
+        div = $ "##{divId}"  # Div to display diagram
+        diagram = $("#diagram").clone()  # Clone original SVG diagram
+        diagram.attr "id", "diagram_"+mathjaxId  # Cloned diagram id
+        div.append diagram
+    
+        obj = new MathJaxObject mathjaxId  # MathJax object
+        f?(obj)  # Optional callback for object (e.g., translation)
+        obj.appendTo diagram  # Append MathJax object to diagram
+        dispXml divId, diagram
+
+show "mathjaxAtOrigin", "mathjaxSource"
+</code>
+
+<code id="24" lang="html" file="out" exec="0" show="0" out="1">
+<div id="mathjaxAtOrigin"></div>
+</code>
+
+<code id="16" lang="html" file="tutorial" exec="0" show="0" out="1">
+==Positioning MathJax Object==
+Now we'll position the MathJax object at the top-left corner 
+of the yellow box in the SVG diagram.
+</code>
+
+<code id="17" lang="coffee" file="mathjax" exec="0" show="1" out="1">
+rect = (id) ->
+    # Returns an object that contains the coordinates and dimensions
+    # of a ractangle element.
+    r = $ "##{id}"
+    val = (p) -> r[0][p].baseVal.value 
+    coords =
+        x: val "x"
+        y: val "y"
+        width: val "width"
+        height: val "height"
+
+show "mathjaxInBox", "mathjaxSource", (obj) ->
+    r = rect "yellowBox"
+    obj.translate r.x, r.y
+</code>
+
+<code id="18" lang="html" file="out" exec="0" show="0" out="1">
+<div id="mathjaxInBox"></div>
+</code>
+
+<code id="29" lang="html" file="tutorial" exec="0" show="0" out="1">
+We can center the MathJax object within the yellow box by using
+%width% and %height% for the MathJax object and the yellow box.
+</code>
+
+
+<code id="21" lang="coffee" file="mathjax" exec="0" show="1" out="1">
+show "mathjaxCenteredInBox", "mathjaxSource", (obj) ->
+    r = rect "yellowBox"
+    x = r.x + (r.width - obj.width())/2
+    y = r.y + (r.height - obj.height())/2
+    obj.translate x, y
+</code>
+
+<code id="22" lang="html" file="out" exec="0" show="0" out="1">
+<div id="mathjaxCenteredInBox"></div>
+</code>
+
+<code id="31" lang="html" file="tutorial" exec="0" show="0" out="1">
+==Advanced Example==
+
+Here we define two MathJax objects, and embed them both into the diagram
+at different positions.
+</code>
+
+<code id="32" lang="html" file="mathjax" exec="0" show="1" out="1">
+<div style="padding: 20px; background: #cfc">
+
+<div id="mathjaxIntegral">
+$\int_{-\infty}^{\infty} \frac{\gamma(t+\delta)}{1+2\gamma(t)} dt$
+</div>
+
+<div id="mathjaxGamma">
+$\Gamma(t) = \sum_{n=1}^N \Psi_n(t)$
+</div>
+
+</div>
+</code>
+
+<code id="33" lang="coffee" file="mathjax" exec="0" show="1" out="1">
+run ->
+    
+    # Clone diagram.
+    divId = "mathjaxAdvanced"
+    div = $ "##{divId}"
+    diagram = $("#diagram").clone()
+    diagram.attr "id", "advancedDiagram"
+    div.append diagram
+    r = rect "yellowBox"  # Yellow box
+
+    # Center integral in box.
+    integral = new MathJaxObject "mathjaxIntegral"
+    xI = r.x + (r.width - integral.width())/2
+    yI = r.y + (r.height - integral.height())/2
+    integral.translate xI, yI
+    integral.appendTo diagram   # Append MathJax object to diagram
+
+    # Position gamma equation vertically-centered to right of box.
+    gamma = new MathJaxObject "mathjaxGamma"
+    xG = r.x + r.width + 20
+    yG = r.y + (r.height - gamma.height())/2
+    gamma.translate xG, yG
+    gamma.appendTo diagram
+</code>
+
+<code id="34" lang="html" file="out" exec="0" show="0" out="1">
+<div id="mathjaxAdvanced"></div>
+</code>
+
+<code id="35" lang="html" file="tutorial" exec="0" show="0" out="1">
+==Standalone SVG file==
+To create a standalone SVG file, we need to embed MathJax glyphs
+into the diagram's SVG.  The code below shows how to do this,
+and displays the SVG in a textarea that can be copied into 
+a standalone file.
+</code>
+
+<code id="37" lang="coffee" file="mathjax" exec="0" show="1" out="1">
+run ->
+    
+    # Diagram from example above
+    diagram = $ "#advancedDiagram"
+    
+    # Include MathJax glyphs at start of diagram's SVG.
+    glyphs = $ "#MathJax_SVG_glyphs"
+    diagram.prepend glyphs
+    
+    # Display diagram's SVG in highlighted textarea.
+    # xmlString is pre-defined function to convert XML object to string.
+    xml = xmlString diagram
+    textArea = $ "<textarea>",
+        text: xml
+        rows: 40, readonly: true
+        css: 
+            width: "720px"
+            overflow: "auto"
+            whiteSpace: "pre"
+    $("#standaloneSVG").append textArea
+</code>
+
+<code id="36" lang="html" file="out" exec="0" show="0" out="1">
+<div id="standaloneSVG"></div>
+</code>
+
+<code id="12" lang="coffee" file="mathjax" exec="0" show="0" out="1">
+class SVG
+
+    # ZZZ Later, get from SVG module
+    
+    @NS: "http://www.w3.org/2000/svg"
+    
+    @element: (type) -> document.createElementNS @NS, type
+    
+    @attr: (el, p, v) -> el.setAttributeNS null, p, v
+    
+    @get: (el, p) -> el.getAttributeNS null, p
+    
+    @set: (el, props) ->
+        for p, v of props
+            @attr el, p, v
+</code>
+
+<code id="5" lang="javascript" file="formatxml" exec="0" show="0" out="1">
+// Use vkbeautify instead of this now.
+// http://stackoverflow.com/questions/376373/pretty-printing-xml-with-javascript
+function formatXml(xml) {
+    var formatted = '';
+    var reg = /(>)(<)(\/*)/g;
+    xml = xml.replace(reg, '$1\r\n$2$3');
+    var pad = 0;
+    jQuery.each(xml.split('\r\n'), function(index, node) {
+        var indent = 0;
+        if (node.match( /.+<\/\w[^>]*>$/ )) {
+            indent = 0;
+        } else if (node.match( /^<\/\w/ )) {
+            if (pad != 0) {
+                pad -= 1;
+            }
+        } else if (node.match( /^<\w[^>]*[^\/]>.*$/ )) {
+            indent = 1;
+        } else {
+            indent = 0;
+        }
+
+        var padding = '';
+        for (var i = 0; i < pad; i++) {
+            padding += '  ';
+        }
+
+        formatted += padding + node + '\r\n';
+        pad += indent;
+    });
+
+    return formatted;
+}
+</code>
+
+</document>
+
